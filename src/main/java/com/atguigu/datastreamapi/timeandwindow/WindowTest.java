@@ -45,15 +45,17 @@ public class WindowTest {
                 );
 
         // 开窗计算，计算每10秒钟内每个用户的访问频次
-//        stream.keyBy(value -> value.user)
-////                .window(TumblingEventTimeWindows.of(Time.seconds(10)))
-////                .window(TumblingEventTimeWindows.of(Time.days(1), Time.hours(-8)))
-////                .window(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
-////                .window(EventTimeSessionWindows.withGap(Time.seconds(10)))
-////                .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
-//                .countWindow(10, 2)
-//                .max("timestamp")
-//                .print();
+        stream.keyBy(value -> value.user)
+//                .window(TumblingEventTimeWindows.of(Time.seconds(10)))
+//                .window(TumblingEventTimeWindows.of(Time.days(1), Time.hours(-8)))
+//                .window(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+//                .window(EventTimeSessionWindows.withGap(Time.seconds(10)))
+//                .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
+                .countWindow(10, 2)
+//                .evictor()
+//                .trigger()
+                .max("timestamp")
+                .print();
         stream.map( value -> Tuple2.of(value.user, 1L))
                 .returns(Types.TUPLE(Types.STRING, Types.LONG))
                 .keyBy( value -> value.f0 )
