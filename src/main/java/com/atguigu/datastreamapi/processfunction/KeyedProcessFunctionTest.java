@@ -41,6 +41,7 @@ public class KeyedProcessFunctionTest {
                                 "处理时间为：" + processingTime + "\n");
 
                         ctx.timerService().registerEventTimeTimer(ctx.timestamp() + 10000);
+//                        ctx.timerService().registerEventTimeTimer(ctx.timestamp() + 20000);
                         ctx.timerService().registerProcessingTimeTimer(ctx.timestamp() + 10000);
                     }
 
