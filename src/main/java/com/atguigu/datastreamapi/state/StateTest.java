@@ -10,7 +10,10 @@ import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.*;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
@@ -28,6 +31,22 @@ public class StateTest {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
+        env.enableCheckpointing(600);
+        env.setStateBackend(new HashMapStateBackend());
+
+        // 获取检查点配置
+        CheckpointConfig checkpointConfig = env.getCheckpointConfig();
+        checkpointConfig.setCheckpointInterval(800);
+        checkpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+//        env.getCheckpointConfig().setCheckpointStorage("hdfs://..");
+
+        checkpointConfig.setCheckpointTimeout(30000);
+        checkpointConfig.setMaxConcurrentCheckpoints(2);
+        checkpointConfig.setMinPauseBetweenCheckpoints(200);
+        checkpointConfig.enableUnalignedCheckpoints();
+        checkpointConfig.setAlignmentTimeout(Duration.ofSeconds(5));
+        checkpointConfig.setTolerableCheckpointFailureNumber(3);
+        checkpointConfig.enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
         SingleOutputStreamOperator<Event> stream = env.addSource(new ClickEventSource())
                 .assignTimestampsAndWatermarks(WatermarkStrategy.<Event>forBoundedOutOfOrderness(Duration.ZERO)
