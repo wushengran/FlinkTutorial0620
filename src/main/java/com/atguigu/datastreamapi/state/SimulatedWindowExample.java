@@ -61,7 +61,7 @@ public class SimulatedWindowExample {
 
         @Override
         public void processElement(Event value, KeyedProcessFunction<String, Event, UrlViewCount>.Context ctx, Collector<UrlViewCount> out) throws Exception {
-            // 根据数据的时间戳确定所属的窗口
+            // 根据数据的时间戳确定所属的窗口，窗口分配器
             Long start = value.timestamp - value.timestamp % size ;
             Long end = start + size;
 
