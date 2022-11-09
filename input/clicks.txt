@@ -1,0 +1,12 @@
+Alice, ./home, 1000
+Bob, ./cart, 2000
+Cary, ./fav, 3000
+Mary, ./prod?id=1, 4000
+Bob, ./home, 5000
+Bob, ./cart, 7000
+Bob, ./prod?id=1, 9000
+Bob, ./prod?id=2, 10000
+Bob, ./home, 11000
+Alice, ./cart, 12000
+Mary, ./prod?id=2, 15000
+Mary, ./home, 18000
