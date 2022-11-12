@@ -2,6 +2,7 @@ package com.atguigu.cep;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.cep.CEP;
+import org.apache.flink.cep.PatternFlatSelectFunction;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.pattern.Pattern;
@@ -10,6 +11,7 @@ import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
 
 import java.time.Duration;
 import java.util.List;
@@ -23,7 +25,7 @@ import java.util.Map;
  * Created by  wushengran
  */
 
-public class LoginFailDetectExample {
+public class LoginFailDetectExample_Pro {
     public static void main(String[] args) throws Exception {
         // 创建流式执行环境
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -44,43 +46,29 @@ public class LoginFailDetectExample {
                 );
 
         // 1. 定义Pattern
-        Pattern<LoginEvent, LoginEvent> pattern = Pattern.<LoginEvent>begin("first")
+        Pattern<LoginEvent, LoginEvent> pattern = Pattern.<LoginEvent>begin("fail")
                 .where(new IterativeCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent value, Context<LoginEvent> ctx) throws Exception {
                         return value.eventType.equals("fail");
                     }
-                })    // 检测第一次登录失败
-                .next("second")
-                .where(new SimpleCondition<LoginEvent>() {
-                    @Override
-                    public boolean filter(LoginEvent value) throws Exception {
-                        return value.eventType.equals("fail");
-                    }
-                })    // 检测第二次登录失败
-                .next("third")
-                .where(new SimpleCondition<LoginEvent>() {
-                    @Override
-                    public boolean filter(LoginEvent value) throws Exception {
-                        return value.eventType.equals("fail");
-                    }
-                })    // 检测第三次登录失败
+                }).times(3).consecutive()
                 .within(Time.seconds(10));
 
         // 2. 将模式应用到输入事件流上，检测匹配的复杂事件
         PatternStream<LoginEvent> patternStream = CEP.pattern(loginEventStream.keyBy(value -> value.userId), pattern);
 
         // 3. 处理检测到的复杂事件，输出报警信息
-        patternStream.select(new PatternSelectFunction<LoginEvent, String>() {
+        patternStream.flatSelect(new PatternFlatSelectFunction<LoginEvent, String>() {
                     @Override
-                    public String select(Map<String, List<LoginEvent>> pattern) throws Exception {
-                        LoginEvent firstFail = pattern.get("first").get(0);
-                        LoginEvent secondFail = pattern.get("second").get(0);
-                        LoginEvent thirdFail = pattern.get("third").get(0);
-                        return "用户" + firstFail.userId + "连续三次登录失败！登录时间：" +
+                    public void flatSelect(Map<String, List<LoginEvent>> pattern, Collector<String> out) throws Exception {
+                        LoginEvent firstFail = pattern.get("fail").get(0);
+                        LoginEvent secondFail = pattern.get("fail").get(1);
+                        LoginEvent thirdFail = pattern.get("fail").get(2);
+                        out.collect("用户" + firstFail.userId + "连续三次登录失败！登录时间：" +
                                 firstFail.ts + ", " +
                                 secondFail.ts + ", " +
-                                thirdFail.ts;
+                                thirdFail.ts);
                     }
                 })
                 .print();
